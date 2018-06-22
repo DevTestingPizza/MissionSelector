@@ -50,6 +50,8 @@ namespace MissionSelector
 
         }
         private Card[] Cards = new Card[6];
+        private List<int> Buttons = new List<int>() { 0, 0, 0 };
+        private int SelectedButton = -1;
 
         private bool firstTick = true;
         private Scaleform SelectorScaleform;
@@ -65,20 +67,6 @@ namespace MissionSelector
         /// </summary>
         public Main()
         {
-            var txd = CreateRuntimeTxd("testdict");
-            var tx1 = CreateRuntimeTextureFromImage(txd, "grid1", "1.png");
-            var tx2 = CreateRuntimeTextureFromImage(txd, "grid2", "2.png");
-            var tx3 = CreateRuntimeTextureFromImage(txd, "grid3", "3.png");
-            var tx4 = CreateRuntimeTextureFromImage(txd, "grid4", "4.png");
-            var tx5 = CreateRuntimeTextureFromImage(txd, "grid5", "5.png");
-            var tx6 = CreateRuntimeTextureFromImage(txd, "grid6", "6.png");
-
-            Cards[0] = new Card(0, "Mission", "This is a simple description. Descriptions can be very, very, VERY long. Or they can be very short. It doesn't matter, nobody reads them anyway.", 0f, 0f, 0, 18, false, 100, "Vespura", 1, 4, "AIRP", "grid1", "grid1");
-            Cards[1] = new Card(1, "Deathmatch", "Description?", 0f, 0f, 0, 18, false, 99, "Vespura", 1, 4, "AIRP", "grid2", "grid2");
-            Cards[2] = new Card(2, "Team Deathmatch", "THAT WAS A HEADSHOT, YOU MOTHER FUCKER!", 0f, 0f, 0, 18, false, 100, "Vespura", 1, 4, "AIRP", "grid3", "grid3");
-            Cards[3] = new Card(3, "Super Fun Race", "I'm bored already.", 0f, 0f, 0, 18, false, 100, "Vespura", 1, 4, "AIRP", "grid4", "grid4");
-            Cards[4] = new Card(4, "Die Already (Survival)", "Please just die.", 0f, 0f, 0, 18, false, 100, "Vespura", 1, 4, "AIRP", "grid5", "grid5");
-            Cards[5] = new Card(0, "Some Mission", "This is a another simple description.", 0f, 0f, 0, 18, false, 100, "Vespura", 1, 4, "AIRP", "grid6", "grid6");
 
             Tick += OnTick;
         }
@@ -97,6 +85,20 @@ namespace MissionSelector
 
             if (firstTick)
             {
+
+                RequestStreamedTextureDict("cardimages", true);
+                while (!HasStreamedTextureDictLoaded("cardimages"))
+                {
+                    await Delay(0);
+                }
+
+                Cards[0] = new Card(0, "Mission", "This is a simple description. Descriptions can be very, very, VERY long. Or they can be very short. It doesn't matter, nobody reads them anyway.", 0f, 0f, 0, 18, false, 100, "Vespura", 1, 4, "AIRP", "cardimages", "1");
+                Cards[1] = new Card(1, "Team Deathmatch", "Description?", 0f, 0f, 0, 18, false, 99, "Vespura", 1, 4, "AIRP", "cardimages", "2");
+                Cards[2] = new Card(2, "Deathmatch", "THAT WAS A HEADSHOT, YOU MOTHER FUCKER!", 0f, 0f, 0, 18, false, 100, "Vespura", 1, 4, "AIRP", "cardimages", "3");
+                Cards[3] = new Card(3, "Super Fun Race", "I'm bored already.", 0f, 0f, 0, 18, false, 100, "Vespura", 1, 4, "AIRP", "cardimages", "4");
+                Cards[4] = new Card(4, "Die Already (Survival)", "Please just die.", 0f, 0f, 0, 18, false, 100, "Vespura", 1, 4, "AIRP", "cardimages", "5");
+                Cards[5] = new Card(0, "Some Mission", "This is a another simple description.", 0f, 0f, 0, 18, false, 100, "Vespura", 1, 4, "AIRP", "cardimages", "6");
+
                 firstTick = false;
 
                 SelectorScaleform = new Scaleform("MP_NEXT_JOB_SELECTION");
@@ -195,21 +197,49 @@ namespace MissionSelector
                 if (!Cards[currentSelection].Selected)
                 {
                     ShowPlayerVote(SelectorScaleform.Handle, currentSelection, Game.Player.Name, 255, 255, 255);
+
                     for (var i = 0; i < 6; i++)
                     {
                         if (Cards[i].Selected)
                         {
                             Cards[i].Selected = false;
                             Cards[i].Votes--;
-
                             SetGridItemVote(SelectorScaleform.Handle, i, Cards[i].Votes, Cards[i].VoteColor, false, true);
                             break;
                         }
+                    }
+                    if (SelectedButton != -1)
+                    {
+                        Buttons[SelectedButton]--;
+                        SetGridItemVote(SelectorScaleform.Handle, SelectedButton + 6, Buttons[SelectedButton], 18, false, true);
+                        SelectedButton = -1;
                     }
                     Cards[currentSelection].Selected = true;
                     Cards[currentSelection].Votes++;
                     SetGridItemVote(SelectorScaleform.Handle, currentSelection, Cards[currentSelection].Votes, Cards[currentSelection].VoteColor, true, true);
                 }
+            }
+            else
+            {
+                for (var i = 0; i < 6; i++)
+                {
+                    if (Cards[i].Selected)
+                    {
+                        Cards[i].Selected = false;
+                        Cards[i].Votes--;
+
+                        SetGridItemVote(SelectorScaleform.Handle, i, Cards[i].Votes, Cards[i].VoteColor, false, true);
+                        break;
+                    }
+                }
+                if (SelectedButton != -1)
+                {
+                    Buttons[SelectedButton]--;
+                    SetGridItemVote(SelectorScaleform.Handle, SelectedButton + 6, Buttons[SelectedButton], 18, false, true);
+                }
+                SelectedButton = currentSelection - 6;
+                Buttons[SelectedButton]++;
+                SetGridItemVote(SelectorScaleform.Handle, currentSelection, Buttons[SelectedButton], 18, true, true);
             }
         }
 
@@ -496,6 +526,27 @@ namespace MissionSelector
         /// <param name="textureName">Texture name for the background image.</param>
         private void SetGridItem(int scaleformHandle, int itemIndex, string itemText, int jobType, int rockstarLogoType, bool previouslyCompleted, float rpMultiplier, float moneyMultiplier, bool itemDisabled, int iconColor, string textureDict, string textureName)
         {
+            int jobIcon = 0;
+            if (jobType == 0)
+            {
+                jobIcon = 0;
+            }
+            else if (jobType == 1)
+            {
+                jobIcon = 1;
+            }
+            else if (jobType == 2)
+            {
+                jobIcon = 4;
+            }
+            else if (jobType == 3)
+            {
+                jobIcon = 2;
+            }
+            else if (jobType == 4)
+            {
+                jobIcon = 3;
+            }
             PushScaleformMovieFunction(scaleformHandle, "SET_GRID_ITEM");
             PushScaleformMovieMethodParameterInt(itemIndex);          // Item index.
             PushScaleformMovieMethodParameterString(itemText);        // Item title.
@@ -503,7 +554,7 @@ namespace MissionSelector
             PushScaleformMovieMethodParameterString(textureName);     // Item texture name.
             PushScaleformMovieMethodParameterInt(1);                  // Item background: -1 no background, 0 blank background, 1 texture background.
             PushScaleformMovieMethodParameterInt(rockstarLogoType);   // Item logo type: 0 = No logo, 1 = R* Verified logo, 2+ = R* Created logo.
-            PushScaleformMovieMethodParameterInt(jobType);           // Item icon: -1 = NONE, 0 = MISSION, 1 = DEATHMATCH, 2 = RACE, 3 = SURVIVAL, 4 = TEAM DEATHMATCH.
+            PushScaleformMovieMethodParameterInt(jobIcon);           // Item icon: -1 = NONE, 0 = MISSION, 1 = DEATHMATCH, 2 = RACE, 3 = SURVIVAL, 4 = TEAM DEATHMATCH.
             PushScaleformMovieMethodParameterBool(previouslyCompleted);   // Job previously completed checkmark.
             PushScaleformMovieMethodParameterFloat(rpMultiplier);         // RP multiplier value.
             PushScaleformMovieMethodParameterFloat(moneyMultiplier);      // Money multiplier value.
