@@ -3,10 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using CitizenFX.Core;
+using static CitizenFX.Core.Native.API;
 
-namespace MissionSelector
+namespace MissionSelectorServer
 {
-    public class Class1
+    public class MainServer : BaseScript
     {
+
     }
 }
