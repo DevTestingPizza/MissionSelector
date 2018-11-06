@@ -4,7 +4,8 @@
 
 --------
 
-Info on how to use this API will be available soon.
+
+**I will not be finishing this code. So do with it whatever you want. It's a mess and contains a lot of unfinished things, but hopefully it can be useful to someone that wants to create something awesome.**
 
 
 --------
